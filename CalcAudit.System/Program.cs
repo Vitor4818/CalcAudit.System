@@ -1,10 +1,15 @@
 using CalcAudit.System.Components;
+using CalcAudit.System.Services; // <--- ESTE USING É OBRIGATÓRIO
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// ?????? A LINHA QUE ESTÁ FALTANDO É ESSA AQUI ??????
+builder.Services.AddHttpClient<ICalculoService, CalculoService>();
+// ?????? ADICIONE ANTES DO "builder.Build()" ??????
 
 var app = builder.Build();
 
@@ -18,10 +23,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

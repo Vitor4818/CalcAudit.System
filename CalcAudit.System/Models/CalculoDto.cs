@@ -7,7 +7,7 @@ namespace CalcAudit.System.Models
     /// </summary>
     public class CalculoDto
     {
-        public int? Id { get; set; }
+        public int Id { get; set; } = 0;
 
         [Required(ErrorMessage = "O Valor A é obrigatório.")]
         public decimal? ValorA { get; set; }

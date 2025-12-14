@@ -1,4 +1,5 @@
 ﻿using CalcAudit.System.Models;
+using System.Web; // Útil para garantir segurança na URL, mas vamos simples aqui
 
 namespace CalcAudit.System.Services
 {
@@ -7,58 +8,53 @@ namespace CalcAudit.System.Services
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
 
-        // Injetamos IConfiguration para ler o appsettings.json
         public CalculoService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
 
-            // Busca a URL e a Chave do arquivo de configuração
             var baseUrl = configuration["ApiSettings:BaseUrl"];
             _apiKey = configuration["ApiSettings:ApiKey"]
-                      ?? throw new Exception("ApiKey não configurada no appsettings.json");
+                      ?? throw new Exception("ApiKey não configurada.");
 
             if (string.IsNullOrEmpty(baseUrl))
-                throw new Exception("BaseUrl não configurada no appsettings.json");
+                throw new Exception("BaseUrl não configurada.");
 
             _httpClient.BaseAddress = new Uri(baseUrl);
         }
 
         public async Task<string> SalvarCalculoAsync(CalculoDto calculo)
         {
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("ApiKey", _apiKey);
+            // REMOVEMOS A LINHA DE HEADER
+            // _httpClient.DefaultRequestHeaders.Add("ApiKey", _apiKey); <--- NÃO USE MAIS
 
-            var response = await _httpClient.PostAsJsonAsync("Calculo", calculo);
+            // ADICIONAMOS A APIKEY NA URL
+            var response = await _httpClient.PostAsJsonAsync($"api/calculadora?apikey={_apiKey}", calculo);
 
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadAsStringAsync();
             }
 
-            // Tratamento de erro melhorado
             var erro = await response.Content.ReadAsStringAsync();
             throw new Exception($"Erro API ({response.StatusCode}): {erro}");
         }
 
         public async Task<List<CalculoDto>> ObterHistoricoAsync()
         {
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("ApiKey", _apiKey);
-
-            return await _httpClient.GetFromJsonAsync<List<CalculoDto>>("Calculo")
+            // GET também precisa da chave na URL
+            return await _httpClient.GetFromJsonAsync<List<CalculoDto>>($"api/calculadora?apikey={_apiKey}")
                    ?? new List<CalculoDto>();
         }
 
         public async Task DeletarCalculoAsync(int id)
         {
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("ApiKey", _apiKey);
-
-            var response = await _httpClient.DeleteAsync($"Calculo/{id}");
+            // MUDANÇA: Passamos o ID como parâmetro (?id=...) e concatenamos a apikey com &
+            var response = await _httpClient.DeleteAsync($"api/calculadora?id={id}&apikey={_apiKey}");
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception("Erro ao excluir o registro na API.");
+                var detalheErro = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Falha ao excluir ({response.StatusCode}): {detalheErro}");
             }
         }
     }
