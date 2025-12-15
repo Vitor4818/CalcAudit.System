@@ -1,5 +1,5 @@
 ﻿using CalcAudit.System.Models;
-using System.Web; // Útil para garantir segurança na URL, mas vamos simples aqui
+using System.Web;
 
 namespace CalcAudit.System.Services
 {
@@ -22,33 +22,32 @@ namespace CalcAudit.System.Services
             _httpClient.BaseAddress = new Uri(baseUrl);
         }
 
-        public async Task<string> SalvarCalculoAsync(CalculoDto calculo)
+        public async Task<CalculoDto?> SalvarCalculoAsync(CalculoDto calculo)
         {
-            // REMOVEMOS A LINHA DE HEADER
-            // _httpClient.DefaultRequestHeaders.Add("ApiKey", _apiKey); <--- NÃO USE MAIS
+            var response = await _httpClient.PostAsJsonAsync(
+                $"api/calculadora?apikey={_apiKey}", calculo);
 
-            // ADICIONAMOS A APIKEY NA URL
-            var response = await _httpClient.PostAsJsonAsync($"api/calculadora?apikey={_apiKey}", calculo);
+            if (!response.IsSuccessStatusCode)
+                return null;
 
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsStringAsync();
-            }
+            var content = await response.Content.ReadAsStringAsync();
 
-            var erro = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Erro API ({response.StatusCode}): {erro}");
+            if (!int.TryParse(content, out var id))
+                return null;
+
+            calculo.Id = id;
+            return calculo;
         }
+
 
         public async Task<List<CalculoDto>> ObterHistoricoAsync()
         {
-            // GET também precisa da chave na URL
             return await _httpClient.GetFromJsonAsync<List<CalculoDto>>($"api/calculadora?apikey={_apiKey}")
                    ?? new List<CalculoDto>();
         }
 
         public async Task DeletarCalculoAsync(int id)
         {
-            // MUDANÇA: Passamos o ID como parâmetro (?id=...) e concatenamos a apikey com &
             var response = await _httpClient.DeleteAsync($"api/calculadora?id={id}&apikey={_apiKey}");
 
             if (!response.IsSuccessStatusCode)

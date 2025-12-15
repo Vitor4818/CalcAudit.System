@@ -1,266 +1,200 @@
 ﻿@page "/"
 @using CalcAudit.System.Models
 @using CalcAudit.System.Services
+@using global::System.Globalization
 @inject ICalculoService CalculoService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>CalcAudit - Gestão de Cálculos</PageTitle>
+<PageTitle>Calculadora</PageTitle>
 
-<div class="container mt-4">
+<div class="calculator-container">
 
     @if (!string.IsNullOrEmpty(MensagemSucesso))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill"></i> @MensagemSucesso
-            <button type="button" class="btn-close" @onclick="() => MensagemSucesso = string.Empty"></button>
-        </div>
-    }
-    @if (!string.IsNullOrEmpty(MensagemErro))
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i> @MensagemErro
-            <button type="button" class="btn-close" @onclick="() => MensagemErro = string.Empty"></button>
+        <div class="success-text fade-in text-center mb-2 p-2">
+            <i class="bi bi-check2-circle"></i> @MensagemSucesso
         </div>
     }
 
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-calculator"></i> Novo Cálculo</h5>
-                </div>
-                <div class="card-body">
-                    <EditForm Model="@Model" OnValidSubmit="ProcessarCalculo">
-                        <DataAnnotationsValidator />
+    <div class="calc-display">
+        <div class="history">@TextoSuperior</div>
+        <div class="current">@Display</div>
+    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Valor A</label>
-                            <InputNumber @bind-Value="Model.ValorA" class="form-control" placeholder="0,00" />
-                            <ValidationMessage For="@(() => Model.ValorA)" class="text-danger small" />
-                        </div>
+    <div class="calc-keypad">
+        <button class="btn-calc text-accent" @onclick="LimparTudo">C</button>
+        <button class="btn-calc text-accent" @onclick="ApagarUltimo">
+            <i class="bi bi-backspace"></i>
+        </button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("%")'>%</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("/")'>÷</button>
 
-                        <div class="mb-3">
-                            <label class="form-label">Operação</label>
-                            <div class="d-flex justify-content-between gap-2">
-                                @foreach (var op in new[] { "+", "-", "*", "/" })
-                                {
-                                    <button type="button"
-                                            class="btn flex-fill @(OperacaoSelecionada == op ? "btn-primary" : "btn-outline-secondary")"
-                                            @onclick="@(() => SelecionarOperacao(op))">
-                                        <strong>@op</strong>
-                                    </button>
-                                }
-                            </div>
-                            @if (ExibirErroOperacao)
-                            {
-                                <div class="text-danger small mt-1">Selecione uma operação.</div>
-                            }
-                        </div>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("7")'>7</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("8")'>8</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("9")'>9</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("*")'>×</button>
 
-                        <div class="mb-3">
-                            <label class="form-label">Valor B</label>
-                            <InputNumber @bind-Value="Model.ValorB" class="form-control" placeholder="0,00" />
-                            <ValidationMessage For="@(() => Model.ValorB)" class="text-danger small" />
-                        </div>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("4")'>4</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("5")'>5</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("6")'>6</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("-")'>-</button>
 
-                        <hr />
+        <button class="btn-calc" @onclick='() => AdicionarNumero("1")'>1</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("2")'>2</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("3")'>3</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("+")'>+</button>
 
-                        <button type="submit" class="btn btn-success w-100 py-2" disabled="@IsLoading">
-                            @if (IsLoading)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                                <span>Processando...</span>
-                            }
-                            else
-                            {
-                                <span><i class="bi bi-save"></i> Calcular e Salvar</span>
-                            }
-                        </button>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico de Operações</h5>
-                    <button class="btn btn-sm btn-light text-secondary" @onclick="CarregarHistorico" title="Atualizar Lista">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 text-center align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Data</th>
-                                    <th>Cálculo</th>
-                                    <th>Resultado</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Historico is null)
-                                {
-                                    <tr><td colspan="5" class="py-4 text-muted">Carregando dados...</td></tr>
-                                }
-                                else if (!Historico.Any())
-                                {
-                                    <tr><td colspan="5" class="py-4 text-muted">Nenhum cálculo registrado.</td></tr>
-                                }
-                                else
-                                {
-                                    @foreach (var item in Historico.OrderByDescending(x => x.DataCalculo))
-                                    {
-                                        <tr>
-                                            <td><span class="badge bg-secondary">@item.Id</span></td>
-                                            <td>@item.DataCalculo.ToString("dd/MM/yyyy HH:mm:ss")</td>
-                                            <td>
-                                                @item.ValorA?.ToString("N2")
-                                                <span class="fw-bold text-primary mx-1">@item.Operacao</span>
-                                                @item.ValorB?.ToString("N2")
-                                            </td>
-                                            <td class="fw-bold text-success">@item.Resultado.ToString("N2")</td>
-                                            <td>
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                        @onclick="() => ExcluirRegistro(item.Id)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <button class="btn-calc" style="grid-column: span 2;" @onclick='() => AdicionarNumero("0")'>0</button>
+        <button class="btn-calc" @onclick="AdicionarVirgula">.</button>
+        <button class="btn-calc btn-equal" @onclick="CalcularResultado">=</button>
     </div>
 </div>
 
+<style>
+    .success-text {
+        color: #4ade80;
+        font-size: 0.9rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        width: 100%;
+        text-align: center;
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
 @code {
-    // --- ESTADO DA TELA ---
-    private CalculoDto Model { get; set; } = new();
-    private List<CalculoDto>? Historico { get; set; }
-    private string OperacaoSelecionada { get; set; } = string.Empty;
+    private string Display { get; set; } = "0";
+    private string? ValorAnterior { get; set; }
+    private string? OperacaoAtual { get; set; }
+    private bool NovoNumero { get; set; } = true;
+    private string? MensagemSucesso { get; set; }
 
-    // Controles de UI
-    private string MensagemSucesso { get; set; } = string.Empty;
-    private string MensagemErro { get; set; } = string.Empty;
-    private bool ExibirErroOperacao { get; set; } = false;
-    private bool IsLoading { get; set; } = false;
+    private string TextoSuperior => $"{ValorAnterior} {OperacaoAtual}";
 
-    // --- CICLO DE VIDA ---
-    protected override async Task OnInitializedAsync()
+    private void AdicionarNumero(string n)
     {
-        // Carrega a tabela assim que a página abre
-        await CarregarHistorico();
-    }
-
-    // --- AÇÕES ---
-
-    private async Task CarregarHistorico()
-    {
-        try
+        LimparMensagem();
+        if (Display == "0" || NovoNumero)
         {
-            Historico = await CalculoService.ObterHistoricoAsync();
+            Display = n;
+            NovoNumero = false;
         }
-        catch (Exception ex)
+        else
         {
-            MensagemErro = "Erro ao carregar histórico: " + ex.Message;
+            Display += n;
         }
     }
 
-    private void SelecionarOperacao(string op)
+    private void AdicionarVirgula()
     {
-        OperacaoSelecionada = op;
-        Model.Operacao = op;
-        ExibirErroOperacao = false;
+        LimparMensagem();
+        if (NovoNumero)
+        {
+            Display = "0,";
+            NovoNumero = false;
+        }
+        else if (!Display.Contains(","))
+        {
+            Display += ",";
+        }
     }
 
-    private async Task ProcessarCalculo()
+    private void DefinirOperacao(string op)
     {
-        MensagemSucesso = string.Empty;
-        MensagemErro = string.Empty;
+        LimparMensagem();
+        ValorAnterior = Display;
+        OperacaoAtual = op;
+        NovoNumero = true;
+    }
 
-        if (string.IsNullOrEmpty(OperacaoSelecionada))
-        {
-            ExibirErroOperacao = true;
+    private void LimparTudo()
+    {
+        Display = "0";
+        ValorAnterior = null;
+        OperacaoAtual = null;
+        NovoNumero = true;
+        MensagemSucesso = null;
+    }
+
+    private void ApagarUltimo()
+    {
+        LimparMensagem();
+        if (Display.Length > 1)
+            Display = Display[..^1];
+        else
+            Display = "0";
+    }
+
+    private void LimparMensagem() => MensagemSucesso = null;
+
+    private async Task CalcularResultado()
+    {
+        if (string.IsNullOrEmpty(OperacaoAtual) || string.IsNullOrEmpty(ValorAnterior))
             return;
-        }
 
         try
         {
-            IsLoading = true;
+            var culturaBR = new CultureInfo("pt-BR");
 
-            // 1. Regra de Negócio: Executa o cálculo localmente antes de enviar
-            CalcularResultadoLocal();
+            decimal valA = decimal.Parse(ValorAnterior, culturaBR);
+            decimal valB = decimal.Parse(Display, culturaBR);
+            decimal resultado = 0;
 
-            // 2. Define data atual
-            Model.DataCalculo = DateTime.Now;
+            switch (OperacaoAtual)
+            {
+                case "+": resultado = valA + valB; break;
+                case "-": resultado = valA - valB; break;
+                case "*": resultado = valA * valB; break;
+                case "/":
+                    if (valB == 0)
+                    {
+                        Display = "Erro";
+                        NovoNumero = true;
+                        return;
+                    }
+                    resultado = valA / valB;
+                    break;
+                case "%":
+                    resultado = valA * (valB / 100);
+                    break;
+            }
 
-            // 3. Chama o Service (API)
-            string idRetorno = await CalculoService.SalvarCalculoAsync(Model);
+            Display = resultado.ToString("0.##", culturaBR);
 
-            MensagemSucesso = $"Dados armazenados com sucesso, ID de Armazenamento {idRetorno}";
+            var calculo = new CalculoDto
+            {
+                ValorA = valA,
+                ValorB = valB,
+                Operacao = OperacaoAtual,
+                Resultado = resultado,
+                DataCalculo = DateTime.Now
+            };
 
-            // 4. Limpa o form e Atualiza a tabela
-            LimparFormulario();
-            await CarregarHistorico();
+            var calculoSalvo = await CalculoService.SalvarCalculoAsync(calculo);
+            int idReal = calculoSalvo?.Id ?? 0;
+
+            MensagemSucesso = $"Dados armazenados com sucesso, ID de Armazenamento {idReal}";
+
+            ValorAnterior = null;
+            OperacaoAtual = null;
+            NovoNumero = true;
         }
-        catch (Exception ex)
+        catch
         {
-            MensagemErro = ex.Message;
+            Display = "Erro";
+            NovoNumero = true;
         }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
-
-    private async Task ExcluirRegistro(int? id)
-    {
-        if (id is null) return;
-
-        try
-        {
-            // Opcional: Adicionar um JavaScript Confirm aqui seria ideal, mas vamos direto pelo requisito
-            await CalculoService.DeletarCalculoAsync(id.Value);
-            await CarregarHistorico(); // Atualiza a tabela após excluir
-            MensagemSucesso = "Registro excluído com sucesso.";
-        }
-        catch (Exception ex)
-        {
-            MensagemErro = "Erro ao excluir: " + ex.Message;
-        }
-    }
-
-    // --- MÉTODOS AUXILIARES ---
-
-    private void CalcularResultadoLocal()
-    {
-        decimal a = Model.ValorA ?? 0;
-        decimal b = Model.ValorB ?? 0;
-
-        switch (OperacaoSelecionada)
-        {
-            case "+": Model.Resultado = a + b; break;
-            case "-": Model.Resultado = a - b; break;
-            case "*": Model.Resultado = a * b; break;
-            case "/":
-                if (b == 0) throw new DivideByZeroException("Não é possível dividir por zero.");
-                Model.Resultado = a / b;
-                break;
-        }
-    }
-
-    private void LimparFormulario()
-    {
-        Model = new CalculoDto();
-        OperacaoSelecionada = string.Empty;
-        ExibirErroOperacao = false;
     }
 }
