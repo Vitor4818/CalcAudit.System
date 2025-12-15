@@ -1,7 +1,200 @@
 ﻿@page "/"
+@using CalcAudit.System.Models
+@using CalcAudit.System.Services
+@using global::System.Globalization
+@inject ICalculoService CalculoService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Calculadora</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="calculator-container">
 
-Welcome to your new app.
+    @if (!string.IsNullOrEmpty(MensagemSucesso))
+    {
+        <div class="success-text fade-in text-center mb-2 p-2">
+            <i class="bi bi-check2-circle"></i> @MensagemSucesso
+        </div>
+    }
+
+    <div class="calc-display">
+        <div class="history">@TextoSuperior</div>
+        <div class="current">@Display</div>
+    </div>
+
+    <div class="calc-keypad">
+        <button class="btn-calc text-accent" @onclick="LimparTudo">C</button>
+        <button class="btn-calc text-accent" @onclick="ApagarUltimo">
+            <i class="bi bi-backspace"></i>
+        </button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("%")'>%</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("/")'>÷</button>
+
+        <button class="btn-calc" @onclick='() => AdicionarNumero("7")'>7</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("8")'>8</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("9")'>9</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("*")'>×</button>
+
+        <button class="btn-calc" @onclick='() => AdicionarNumero("4")'>4</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("5")'>5</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("6")'>6</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("-")'>-</button>
+
+        <button class="btn-calc" @onclick='() => AdicionarNumero("1")'>1</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("2")'>2</button>
+        <button class="btn-calc" @onclick='() => AdicionarNumero("3")'>3</button>
+        <button class="btn-calc text-accent" @onclick='() => DefinirOperacao("+")'>+</button>
+
+        <button class="btn-calc" style="grid-column: span 2;" @onclick='() => AdicionarNumero("0")'>0</button>
+        <button class="btn-calc" @onclick="AdicionarVirgula">.</button>
+        <button class="btn-calc btn-equal" @onclick="CalcularResultado">=</button>
+    </div>
+</div>
+
+<style>
+    .success-text {
+        color: #4ade80;
+        font-size: 0.9rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        width: 100%;
+        text-align: center;
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+    private string Display { get; set; } = "0";
+    private string? ValorAnterior { get; set; }
+    private string? OperacaoAtual { get; set; }
+    private bool NovoNumero { get; set; } = true;
+    private string? MensagemSucesso { get; set; }
+
+    private string TextoSuperior => $"{ValorAnterior} {OperacaoAtual}";
+
+    private void AdicionarNumero(string n)
+    {
+        LimparMensagem();
+        if (Display == "0" || NovoNumero)
+        {
+            Display = n;
+            NovoNumero = false;
+        }
+        else
+        {
+            Display += n;
+        }
+    }
+
+    private void AdicionarVirgula()
+    {
+        LimparMensagem();
+        if (NovoNumero)
+        {
+            Display = "0,";
+            NovoNumero = false;
+        }
+        else if (!Display.Contains(","))
+        {
+            Display += ",";
+        }
+    }
+
+    private void DefinirOperacao(string op)
+    {
+        LimparMensagem();
+        ValorAnterior = Display;
+        OperacaoAtual = op;
+        NovoNumero = true;
+    }
+
+    private void LimparTudo()
+    {
+        Display = "0";
+        ValorAnterior = null;
+        OperacaoAtual = null;
+        NovoNumero = true;
+        MensagemSucesso = null;
+    }
+
+    private void ApagarUltimo()
+    {
+        LimparMensagem();
+        if (Display.Length > 1)
+            Display = Display[..^1];
+        else
+            Display = "0";
+    }
+
+    private void LimparMensagem() => MensagemSucesso = null;
+
+    private async Task CalcularResultado()
+    {
+        if (string.IsNullOrEmpty(OperacaoAtual) || string.IsNullOrEmpty(ValorAnterior))
+            return;
+
+        try
+        {
+            var culturaBR = new CultureInfo("pt-BR");
+
+            decimal valA = decimal.Parse(ValorAnterior, culturaBR);
+            decimal valB = decimal.Parse(Display, culturaBR);
+            decimal resultado = 0;
+
+            switch (OperacaoAtual)
+            {
+                case "+": resultado = valA + valB; break;
+                case "-": resultado = valA - valB; break;
+                case "*": resultado = valA * valB; break;
+                case "/":
+                    if (valB == 0)
+                    {
+                        Display = "Erro";
+                        NovoNumero = true;
+                        return;
+                    }
+                    resultado = valA / valB;
+                    break;
+                case "%":
+                    resultado = valA * (valB / 100);
+                    break;
+            }
+
+            Display = resultado.ToString("0.##", culturaBR);
+
+            var calculo = new CalculoDto
+            {
+                ValorA = valA,
+                ValorB = valB,
+                Operacao = OperacaoAtual,
+                Resultado = resultado,
+                DataCalculo = DateTime.Now
+            };
+
+            var calculoSalvo = await CalculoService.SalvarCalculoAsync(calculo);
+            int idReal = calculoSalvo?.Id ?? 0;
+
+            MensagemSucesso = $"Dados armazenados com sucesso, ID de Armazenamento {idReal}";
+
+            ValorAnterior = null;
+            OperacaoAtual = null;
+            NovoNumero = true;
+        }
+        catch
+        {
+            Display = "Erro";
+            NovoNumero = true;
+        }
+    }
+}
