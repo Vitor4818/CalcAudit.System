@@ -51,8 +51,6 @@ docker build -t calcaudit-app .
 ```
 docker run -d -p 8080:8080 \
   -e "ApiSettings__ApiKey=sua_api_key_aqui" \
-
-
   --name calcaudit-app calcaudit-ap
 ```
 ***3. Acessar: Abra seu navegador em: http://localhost:8080**
