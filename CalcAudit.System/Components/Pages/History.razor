@@ -1,4 +1,4 @@
-﻿@page "/historico"
+@page "/historico"
 @using CalcAudit.System.Models
 @using CalcAudit.System.Services
 @inject ICalculoService CalculoService
@@ -156,7 +156,6 @@
     {
         try
         {
-            // Opcional: Adicionar uma confirmação JS aqui se quiser
             await CalculoService.DeletarCalculoAsync(id);
             await Carregar();
         }
@@ -166,6 +165,5 @@
         }
     }
 
-    // Helper para formatar nulos ou números
     private string FormatNumber(decimal? valor) => valor.HasValue ? valor.Value.ToString("0.##") : "?";
 }

@@ -1,26 +1,38 @@
-@import url('app.css');
+/* =========================================
+   1. VARIÁVEIS GERAIS (Tema Dark)
+   ========================================= */
 :root {
+    /* Cores de Fundo */
     --bg-app: #15171e;
     --calc-bg: #22252d;
+    /* Teclado e Botões */
     --calc-keys: #292d36;
     --calc-keys-sec: #272b33;
+    /* Texto */
     --calc-text: #ffffff;
     --calc-text-sec: #aebdbb;
+    /* Destaques (Accent) */
     --calc-accent: #ff5a66;
     --calc-accent-hover: #ff404e;
     --calc-green: #26e07f;
 }
 
-
+/* =========================================
+   2. ESTILOS BASE
+   ========================================= */
 body {
     background-color: var(--bg-app);
     color: var(--calc-text);
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 0;
+    /* Evita scroll horizontal indesejado no mobile */
     overflow-x: hidden;
 }
 
+/* =========================================
+   3. HEADER & NAVEGAÇÃO (Glassmorphism)
+   ========================================= */
 .glass-header {
     position: sticky;
     top: 0;
@@ -47,6 +59,7 @@ body {
     width: auto;
 }
 
+/* Navegação Desktop */
 .nav-actions {
     display: flex;
     align-items: center;
@@ -90,8 +103,9 @@ body {
         border-color: rgba(255, 255, 255, 0.4);
     }
 
+/* Botão Mobile (Hambúrguer) */
 .mobile-toggle {
-    display: none;
+    display: none; /* Invisível no Desktop */
     background: none;
     border: none;
     color: white;
@@ -99,9 +113,12 @@ body {
     cursor: pointer;
 }
 
+/* =========================================
+   4. CALCULADORA
+   ========================================= */
 .calculator-container {
-    max-width: 400px; 
-    width: 95%; 
+    max-width: 400px; /* Tamanho ideal desktop */
+    width: 95%; /* Tamanho adaptável mobile */
     margin: 2rem auto;
     background-color: var(--calc-bg);
     border-radius: 30px;
@@ -126,7 +143,7 @@ body {
         font-size: 3.5rem;
         font-weight: 500;
         letter-spacing: 2px;
-        word-break: break-all; 
+        word-break: break-all; /* Evita quebra de layout com números grandes */
     }
 
 .calc-keypad {
@@ -172,7 +189,9 @@ body {
         background-color: var(--calc-accent-hover);
     }
 
-
+/* =========================================
+   5. HISTÓRICO - GERAL & DESKTOP
+   ========================================= */
 .history-container {
     width: 90%;
     max-width: 1200px;
@@ -189,6 +208,7 @@ body {
     overflow: hidden;
 }
 
+/* Tabela Customizada */
 .table-dark-custom {
     width: 100% !important;
     --bs-table-bg: transparent;
@@ -245,6 +265,9 @@ body {
     border-radius: 6px;
 }
 
+/* =========================================
+   6. HISTÓRICO - CARDS MOBILE
+   ========================================= */
 .mobile-history-card {
     background: rgba(30, 30, 40, 0.6);
     backdrop-filter: blur(10px);
@@ -263,18 +286,22 @@ body {
     margin-bottom: 2px;
 }
 
+/* =========================================
+   7. RESPONSIVIDADE (MEDIA QUERIES)
+   ========================================= */
 @media (max-width: 768px) {
     /* Ajustes Gerais */
     .hide-mobile {
         display: none !important;
     }
 
+    /* Menu Mobile */
     .mobile-toggle {
-        display: block; 
+        display: block; /* Mostra o botão hambúrguer */
     }
 
     .nav-actions {
-        display: none; 
+        display: none; /* Esconde menu padrão */
         position: absolute;
         top: 100%;
         left: 0;
@@ -283,17 +310,18 @@ body {
         align-items: center;
         gap: 20px;
         padding: 20px;
-        background: rgba(15, 15, 25, 0.98); 
+        background: rgba(15, 15, 25, 0.98); /* Fundo mais sólido no menu mobile */
         backdrop-filter: blur(15px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
         .nav-actions.active {
-            display: flex;
+            display: flex; /* Mostra quando ativo */
             animation: slideDown 0.3s ease-out;
         }
 
+    /* Ajuste links mobile */
     .nav-link-custom, .btn-pekus {
         font-size: 1.1rem;
         width: 100%;
@@ -306,6 +334,7 @@ body {
     }
 }
 
+/* Animação do Menu */
 @keyframes slideDown {
     from {
         opacity: 0;
