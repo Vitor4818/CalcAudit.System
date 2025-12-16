@@ -2,31 +2,33 @@
 
 <div class="page">
     <header class="glass-header">
-        <div class="header-content">
+        <div class="header-container">
 
             <a href="" class="logo-area">
                 <img src="https://www.pekus.com.br/img/logo.png"
                      alt="Pekus"
-                     style="height: 40px; width: auto;" />
+                     class="logo-img" />
             </a>
 
-            <nav class="nav-actions">
+            <button class="mobile-toggle" @onclick="ToggleMenu">
+                <i class="bi @(_isMenuOpen ? "bi-x-lg" : "bi-list")"></i>
+            </button>
 
-                <a href="/" class="nav-link-custom">
-                    <i class="bi bi-clock-history"></i>
+            <nav class="nav-actions @(_isMenuOpen ? "active" : "")">
+
+                <a href="/" class="nav-link-custom" @onclick="CloseMenu">
+                    <i class="bi bi-calculator"></i>
                     <span>Calculadora</span>
                 </a>
 
-                <div class="separator"></div>
-
-                <a href="historico" class="nav-link-custom">
+                <a href="historico" class="nav-link-custom" @onclick="CloseMenu">
                     <i class="bi bi-clock-history"></i>
                     <span>Histórico</span>
                 </a>
 
-                <div class="separator"></div>
+                <div class="separator d-none d-md-block"></div>
 
-                <a href="https://www.pekus.com.br" class="btn-pekus">
+                <a href="https://www.pekus.com.br" target="_blank" class="btn-pekus" @onclick="CloseMenu">
                     Site Pekus <i class="bi bi-arrow-right-short"></i>
                 </a>
             </nav>
@@ -38,3 +40,17 @@
         @Body
     </main>
 </div>
+
+@code {
+    private bool _isMenuOpen = false;
+
+    private void ToggleMenu()
+    {
+        _isMenuOpen = !_isMenuOpen;
+    }
+
+    private void CloseMenu()
+    {
+        _isMenuOpen = false;
+    }
+}
