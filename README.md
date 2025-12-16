@@ -15,7 +15,10 @@ Uma aplicação de Calculadora moderna e containerizada, desenvolvida com **.NET
 ### [👉 Clique para acessar o CalcAudit (Azure Container Instances)](http://pekus-app-vitor.eastus.azurecontainer.io:8080)
 
 *(Nota: Ambiente de demonstração via HTTP na porta 8080)*
-
+> ⚠️ **Nota para acesso via Mobile:**
+> Alguns navegadores móveis (Chrome/Safari) podem forçar automaticamente o redirecionamento para **HTTPS**.
+> Como este é um ambiente de desenvolvimento (Azure Container Instances), ele roda sobre **HTTP** puro.
+> **Se a página não carregar:** Verifique a barra de endereço e remova o "s" (garanta que está acessando `http://...`).
 ---
 
 ## ✨ Funcionalidades
