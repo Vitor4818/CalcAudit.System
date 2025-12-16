@@ -12,7 +12,7 @@ Uma aplicação de Calculadora moderna e containerizada, desenvolvida com **.NET
 ## 🔗 Demo Online (Azure)
 
 🚀 **Aplicação rodando em Produção:**
-### [👉 Clique para acessar o CalcAudit (Azure Container Instances)](http://heimdall-app-vitor.eastus.azurecontainer.io:8080)
+### [👉 Clique para acessar o CalcAudit (Azure Container Instances)](http://pekus-app-vitor.eastus.azurecontainer.io:8080)
 
 *(Nota: Ambiente de demonstração via HTTP na porta 8080)*
 
